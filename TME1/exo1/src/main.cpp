@@ -6,14 +6,17 @@
 int main () {
 
 	std::string abc = "abc";
-	char * str = new char [3];
+	//FAUTE : Pas de '\0' à la fin de chaine de charactère
+	char * str = new char [4];
 	str[0] = 'a';
 	str[1] = 'b';
 	str[2] = 'c';
-	size_t i = 0;
+	str[3] = '\0';
+	//FAUTE : size_t non negatif
+	int i = 0;
 
 	if (! strcmp (str, abc.c_str())) {
-		std::cout << "Equal !";
+		std::cout << "Equal !" << std::endl;
 	}
 
 	pr::List list;
@@ -29,10 +32,14 @@ int main () {
 	}
 
 	// liberer les char de la chaine
+	//FAUTE : Pas besoin de liberer chaque caractère 
+	/*
 	for (char *cp = str ; *cp ; cp++) {
 		delete cp;
 	}
+	*/
 	// et la chaine elle meme
-	delete str;
+	// FAUTE : Ajouter une [] pour liberer tableau
+	delete []str;
 
 }

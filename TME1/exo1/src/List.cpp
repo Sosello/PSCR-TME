@@ -1,4 +1,5 @@
-
+//FAUTE : Pas de header
+#include "List.h"
 namespace pr {
 
 // ******************* Chainon
@@ -9,15 +10,18 @@ size_t Chainon::length() {
 	if (next != nullptr) {
 		len += next->length();
 	}
-	return length();
+	//FAUTE : Pas d'iteration ici, retourne len
+	return len;
 }
 
-void Chainon::print (std::ostream & os) {
+//FAUTE : Pas de const à la fin
+void Chainon::print (std::ostream & os) const{
 	os << data ;
 	if (next != nullptr) {
 		os << ", ";
+		//FAUTE : iteration hors condition if
+		next->print(os);
 	}
-	next->print(os);
 }
 
 // ******************  List
@@ -45,7 +49,8 @@ void List::push_front (const std::string& val) {
 	tete = new Chainon(val,tete);
 }
 
-bool empty() {
+//FAUTE : Pas de class List
+bool List::empty() {
 	return tete == nullptr;
 }
 
@@ -57,10 +62,8 @@ size_t List::size() const {
 	}
 }
 
-} // namespace pr
-
-std::ostream & operator<< (std::ostream & os, const pr::List & vec)
-{
+//FAUTE : Hors de namespace pr
+std::ostream & operator<< (std::ostream & os, const pr::List & vec){
 	os << "[";
 	if (vec.tete != nullptr) {
 		vec.tete->print (os) ;
@@ -68,4 +71,8 @@ std::ostream & operator<< (std::ostream & os, const pr::List & vec)
 	os << "]";
 	return os;
 }
+
+
+} // namespace pr
+
 
