@@ -3,6 +3,8 @@
 
 #include <cstdlib>
 #include <mutex>
+#include <condition_variable>
+#include <cstring>
 
 namespace pr {
 
@@ -11,15 +13,20 @@ template <typename T>
 class Queue {
 	T ** tab;
 	const size_t allocsize;
+	std::condition_variable cv;
 	size_t begin;
 	size_t sz;
 	mutable std::mutex m;
+	mutable std::mutex m2;
+	bool isblocking = false;
 
 	// fonctions private, sans protection mutex
 	bool empty() const {
+		std::unique_lock<std::mutex> lg(m2);	
 		return sz == 0;
 	}
 	bool full() const {
+		std::unique_lock<std::mutex> lg(m2);
 		return sz == allocsize;
 	}
 public:
@@ -31,11 +38,22 @@ public:
 		std::unique_lock<std::mutex> lg(m);
 		return sz;
 	}
+
+	void Setblocking(bool b) {
+		std::unique_lock<std::mutex> lg(m);
+		isblocking = b;
+		cv.notify_all();
+	}
 	T* pop() {
 		std::unique_lock<std::mutex> lg(m);
-		if (empty()) {
-			return nullptr;
+		while (empty()&&isblocking) {
+			cv.wait(lg);
 		}
+		if(empty())
+			return nullptr;
+
+		if(full())
+			cv.notify_all();
 		auto ret = tab[begin];
 		tab[begin] = nullptr;
 		sz--;
@@ -44,9 +62,14 @@ public:
 	}
 	bool push(T* elt) {
 		std::unique_lock<std::mutex> lg(m);
-		if (full()) {
-			return false;
+		while (full()&&isblocking) {
+			cv.wait(lg);
 		}
+		if(full())
+			return false;
+
+		if(empty())
+			cv.notify_all();
 		tab[(begin + sz) % allocsize] = elt;
 		sz++;
 		return true;

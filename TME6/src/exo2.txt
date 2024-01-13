@@ -1,0 +1,29 @@
+ main pid= 6716
+ pid= 6716 ppid= 3971 i:j 1:3
+ pid= 6717 ppid= 6716 i:j 2:3
+ pid= 6718 ppid= 6717 k:j 1:0
+Procesus 6718 termine 
+ pid= 6717 ppid= 6716 child 0 with pid 6718 terminated 
+ pid= 6720 ppid= 6719 k:j 1:0
+Procesus 6720 termine 
+ pid= 6719 ppid= 6717 i:j 3:3
+ pid= 6721 ppid= 6719 k:j 2:0
+Procesus 6721 termine 
+ pid= 6719 ppid= 6717 child 0 with pid 6720 terminated 
+ pid= 6719 ppid= 6717 child 1 with pid 6721 terminated 
+ pid= 6723 ppid= 6722 k:j 1:0
+Procesus 6723 termine 
+ pid= 6725 ppid= 6722 k:j 3:0
+Procesus 6725 termine 
+ pid= 6724 ppid= 6722 k:j 2:0
+Procesus 6724 termine 
+ pid= 6722 ppid= 6719 child 0 with pid 6723 terminated 
+ pid= 6722 ppid= 6719 child 1 with pid 6725 terminated 
+ pid= 6722 ppid= 6719 child 2 with pid 6724 terminated 
+Procesus 6722 termine 
+ pid= 6719 ppid= 6717 child 2 with pid 6722 terminated 
+Procesus 6719 termine 
+ pid= 6717 ppid= 6716 child 1 with pid 6719 terminated 
+Procesus 6717 termine 
+ pid= 6716 ppid= 3971 child 0 with pid 6717 terminated 
+Procesus 6716 termine 

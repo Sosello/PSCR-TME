@@ -6,6 +6,8 @@
 #include <fstream>
 #include <limits>
 #include <random>
+#include "Pool.h"
+#include "Barrier.h"
 
 using namespace std;
 using namespace pr;
@@ -98,6 +100,66 @@ void exportImage(const char * path, size_t width, size_t height, Color * pixels)
 	img.close();
 }
 
+class RayJob : public Job {
+	Scene & m_scene;
+	const Scene::screen_t & m_screen;
+	Color * m_pixels;
+	int m_x;
+	int m_y;
+	vector<Vec3D> & m_lights;
+	Barrier & m_barrier;
+	public:
+		RayJob(Scene & scene, const Scene::screen_t & screen, Color * pixels, int x, int y, vector<Vec3D> & lights, Barrier & barrier) :
+			m_scene(scene),
+			m_screen(screen),
+			m_pixels(pixels),
+			m_x(x),
+			m_y(y),
+			m_lights(lights),
+			m_barrier(barrier)
+	{}
+		void run() {
+			if(m_x == -1) {
+				int width = m_scene.getWidth();
+				for(int x = 0; x < width; ++x) {
+					m_x = x;
+					compute_color();
+				}
+			}
+			else {
+				compute_color();
+			}
+			m_barrier.done();
+		}
+		void compute_color() {
+			// le point de l'ecran par lequel passe ce rayon
+			auto & screenPoint = m_screen[m_y][m_x];
+			// le rayon a inspecter
+			Rayon ray(m_scene.getCameraPos(), screenPoint);
+
+			int targetSphere = findClosestInter(m_scene, ray);
+
+			if (targetSphere == -1) {
+				// keep background color
+				return;
+			} else {
+				const Sphere & obj = *(m_scene.begin() + targetSphere);
+				// pixel prend la couleur de l'objet
+				Color finalcolor = computeColor(obj, ray, m_scene.getCameraPos(), m_lights);
+				// le point de l'image (pixel) dont on vient de calculer la couleur
+				Color & pixel = m_pixels[m_y*m_scene.getHeight() + m_x];
+				// mettre a jour la couleur du pixel dans l'image finale.
+				pixel = finalcolor;
+			}
+		}
+};
+
+enum class JOB_GRAIN
+{
+	PIXEL,
+	LINE
+};
+
 // NB : en francais pour le cours, preferez coder en english toujours.
 // pas d'accents pour eviter les soucis d'encodage
 
@@ -125,30 +187,44 @@ int main () {
 	// Les couleurs des pixels dans l'image finale
 	Color * pixels = new Color[scene.getWidth() * scene.getHeight()];
 
-	// pour chaque pixel, calculer sa couleur
-	for (int x =0 ; x < scene.getWidth() ; x++) {
-		for (int  y = 0 ; y < scene.getHeight() ; y++) {
-			// le point de l'ecran par lequel passe ce rayon
-			auto & screenPoint = screen[y][x];
-			// le rayon a inspecter
-			Rayon  ray(scene.getCameraPos(), screenPoint);
+	// get number of threads
+	unsigned int numThreads = std::thread::hardware_concurrency();
+	cout << "Raytracing with " << numThreads << " threads" << endl;
+	
+	// grain du parallelisme
+	JOB_GRAIN grain = JOB_GRAIN::LINE;
 
-			int targetSphere = findClosestInter(scene, ray);
+	if(grain == JOB_GRAIN::PIXEL)
+	{
+		// create pool of threads and sync barrier
+		unsigned int numJobs = scene.getWidth() * scene.getHeight();
+		Pool threadPool(numJobs);
+		threadPool.start(numThreads);
+		Barrier barrier(numJobs);
 
-			if (targetSphere == -1) {
-				// keep background color
-				continue ;
-			} else {
-				const Sphere & obj = *(scene.begin() + targetSphere);
-				// pixel prend la couleur de l'objet
-				Color finalcolor = computeColor(obj, ray, scene.getCameraPos(), lights);
-				// le point de l'image (pixel) dont on vient de calculer la couleur
-				Color & pixel = pixels[y*scene.getHeight() + x];
-				// mettre a jour la couleur du pixel dans l'image finale.
-				pixel = finalcolor;
+		// pour chaque pixel, calculer sa couleur 
+		for (int x =0 ; x < scene.getWidth() ; x++) {
+			for (int  y = 0 ; y < scene.getHeight() ; y++) {
+				threadPool.submit(new RayJob(scene, screen, pixels, x, y, lights, barrier));
 			}
-
 		}
+		barrier.waitFor();
+		threadPool.stop();
+	}
+	else if(grain == JOB_GRAIN::LINE)
+	{
+		// create pool of threads and sync barrier
+		unsigned int numJobs = scene.getHeight();
+		Pool threadPool(numJobs);
+		threadPool.start(numThreads);
+		Barrier barrier(numJobs);
+
+		// pour chaque pixel, calculer sa couleur 
+		for (int  y = 0 ; y < scene.getHeight() ; y++) {
+			threadPool.submit(new RayJob(scene, screen, pixels, -1, y, lights, barrier));
+		}
+		barrier.waitFor();
+		threadPool.stop();
 	}
 
 	std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();

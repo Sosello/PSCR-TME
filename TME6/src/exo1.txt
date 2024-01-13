@@ -1,0 +1,13 @@
+ main pid= 4236
+ pid= 4237 ppid= 4236 i:j 1:3
+
+ pid= 4238 ppid= 4237 k:j 1:0
+ pid= 4239 ppid= 4237 i:j 2:3
+
+ pid= 4240 ppid= 4239 k:j 1:0
+ pid= 4241 ppid= 4239 k:j 2:0
+ pid= 4242 ppid= 4239 i:j 3:3
+ 
+ pid= 4243 ppid= 4242 k:j 1:0
+ pid= 4244 ppid= 4242 k:j 2:0
+ pid= 4245 ppid= 4242 k:j 3:0

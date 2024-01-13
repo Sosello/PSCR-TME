@@ -27,7 +27,7 @@ public :
 	typedef std::vector<std::vector<Vec3D> > screen_t;
 private :
 	// l'ecran, calcule a partir de la position et l'angle
-	std::vector<std::vector<Vec3D> > screen;
+	screen_t screen;
 public:
 	// une scene, on donne seulement la resolution
 	Scene(int width=800, int height=600)
@@ -59,7 +59,7 @@ public:
 	const_iterator begin() const { return objects.begin() ; }
 	const_iterator end() const { return objects.end() ; }
 
-	// les points de l'ecran par lesquels pqssent les rayons
+	// les points de l'ecran par lesquels passent les rayons
 	const screen_t & getScreenPoints() const { return screen; }
 	// resolution en pixels
 	int getHeight() const { return height ;}
